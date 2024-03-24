@@ -4,8 +4,6 @@ public class hISTChunk : PngChunk
 {
     public ushort[] Histogram { get; }
 
-    public override bool RemoveWhenAnonymizing => true;
-
     public hISTChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)
     {

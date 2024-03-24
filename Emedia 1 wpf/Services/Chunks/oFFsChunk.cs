@@ -7,9 +7,7 @@ public class oFFsChunk : PngChunk
     public UnitType Unit { get; }
     public int OffsetX { get; }
     public int OffsetY { get; }
-    
-    public override bool RemoveWhenAnonymizing => true;
-    
+
     public oFFsChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)
     {   

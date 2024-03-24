@@ -7,8 +7,6 @@ public class zTXtChunk : PngChunk
     public string Keyword { get; }
     public CompressionMethod CompressionMethod { get; }
     public string Text { get; }
-    
-    public override bool RemoveWhenAnonymizing => true;
 
     public zTXtChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)
@@ -21,5 +19,5 @@ public class zTXtChunk : PngChunk
         Text = DecompressString(data[(nullIndex + 4)..], Encoding.Latin1); // 1 after compressionMethod + magic offset of 2
     }
 
-    public override string FormatData() => $"Type: {Type}, Keyword: {Keyword}, Compression Method: {CompressionMethod}, Text: {Text}";
+    public override string FormatData() => $"Type: {Type}, Keyword: {Keyword}, Compression Method: {CompressionMethod}, Text: {(Text.Length < 100 ? Text : $"{Text[..100]}...")}";
 }

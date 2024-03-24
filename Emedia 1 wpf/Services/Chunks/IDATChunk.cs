@@ -4,7 +4,7 @@ public class IDATChunk : PngChunk
 {
     public byte[] ImageData { get; }
 
-    public override bool AllowMultiple => true;
+    public override bool RemoveWhenAnonymizing => false;
 
     public IDATChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)

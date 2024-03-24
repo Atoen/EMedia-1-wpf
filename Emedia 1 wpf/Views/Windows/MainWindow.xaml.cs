@@ -1,4 +1,4 @@
-﻿namespace Emedia_1_wpf;
+﻿namespace Emedia_1_wpf.Views.Windows;
 
 public partial class MainWindow
 {

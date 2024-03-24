@@ -1,4 +1,5 @@
-﻿using System.Buffers.Binary;
+﻿using System.Buffers;
+using System.Buffers.Binary;
 using System.IO;
 using System.Text;
 using Emedia_1_wpf.Services.Chunks;
@@ -58,6 +59,21 @@ public static class Extensions
     {
         var bytes = Encoding.ASCII.GetBytes(text);
         stream.Write(bytes);
+    }
+    
+    public static async ValueTask WriteUIntAsync(this Stream stream, uint num)
+    {
+        var buffer = ArrayPool<byte>.Shared.Rent(4);
+        BinaryPrimitives.WriteUInt32BigEndian(buffer, num);
+        await stream.WriteAsync(buffer.AsMemory(0, 4));
+        
+        ArrayPool<byte>.Shared.Return(buffer);
+    }
+    
+    public static ValueTask WriteAsciiStringAsync(this Stream stream, string text)
+    {
+        var bytes = Encoding.ASCII.GetBytes(text);
+        return stream.WriteAsync(bytes);
     }
 
     public static int GetByteWidth(this ColorType colorType) => colorType switch

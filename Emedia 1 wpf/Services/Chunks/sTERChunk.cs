@@ -3,9 +3,7 @@
 public class sTERChunk : PngChunk
 {
     public StereoIndicator Indicator { get;}
-    
-    public override bool RemoveWhenAnonymizing => true;
-    
+
     public sTERChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)
     {

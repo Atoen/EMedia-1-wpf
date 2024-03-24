@@ -4,8 +4,6 @@ public class tIMEChunk : PngChunk
 {
     public DateTime LastModificationTime { get; }
 
-    public override bool RemoveWhenAnonymizing => true;
-
     public tIMEChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)
     {

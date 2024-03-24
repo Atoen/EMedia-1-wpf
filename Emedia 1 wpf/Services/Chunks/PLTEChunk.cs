@@ -4,6 +4,8 @@ public class PLTEChunk : PngChunk
 {
     public byte[] Palette { get; }
 
+    public override bool RemoveWhenAnonymizing => false;
+
     public PLTEChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)
     {

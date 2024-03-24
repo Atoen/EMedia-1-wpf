@@ -4,7 +4,7 @@ using System.Windows.Media.Imaging;
 
 namespace Emedia_1_wpf.Views.Windows;
 
-public partial class ImageWindow : Window
+public partial class ImageWindow
 {
     public ImageWindow(string imagePath)
     {

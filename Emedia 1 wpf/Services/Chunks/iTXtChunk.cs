@@ -5,58 +5,64 @@ namespace Emedia_1_wpf.Services.Chunks;
 public class iTXtChunk : PngChunk
 {
     public string Keyword { get; }
-    public bool CompressionFlag { get; }
-    public byte CompressionMethod { get; }
+    public bool Compressed { get; }
+    public CompressionMethod CompressionMethod { get; }
     public string LanguageTag { get; }
     public string TranslatedKeyword { get; }
     public string Text { get; }
-    
-    public override bool RemoveWhenAnonymizing => true;
-
 
     public iTXtChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)
     {
-        var nullIndex = Array.IndexOf(data, (byte)0);
-        if (nullIndex < 0)
+        var firstNullIndex = Array.IndexOf(data, (byte) 0);
+        var secondNullIndex = Array.IndexOf(data, (byte) 0, firstNullIndex + 3);
+        var thirdNullIndex = Array.IndexOf(data, (byte) 0, secondNullIndex + 1);
+        if (firstNullIndex < 0 || secondNullIndex < 0 || thirdNullIndex < 0)
         {
-            throw new ArgumentException("iTXt chunk bad: no null terminator(keyword)");
+            throw new ArgumentException("iTXt chunk: missing null terminator");
         }
-        
-        Keyword = Encoding.ASCII.GetString(data, 0, nullIndex);
-        var offset = nullIndex + 1;
-        if (offset + 5 >= data.Length)
-        {
-            throw new ArgumentException("iTXt chunk bad: data length too short");
-        }
-        
-        CompressionFlag = data[offset] != 0;
-        CompressionMethod = data[offset + 1];
-        LanguageTag = Encoding.ASCII.GetString(data, offset + 2, 3);
-        var translatedKeywordNullIndex = Array.IndexOf(data, (byte)0, offset + 5);
-        if (translatedKeywordNullIndex < 0)
-        {
-            throw new ArgumentException("iTXt chunk bad: no null terminator(trans keyword)");
-        }
-        
-        TranslatedKeyword = Encoding.ASCII.GetString(data, offset + 5, translatedKeywordNullIndex - (offset + 5));
-        var textStartIndex = translatedKeywordNullIndex + 1;
-        if (textStartIndex >= data.Length)
-        {
-            throw new ArgumentException("iTXt chunk bad: no text data");
-        }
-        
-        Text = Encoding.Latin1.GetString(data, textStartIndex, data.Length - textStartIndex);
+
+        Keyword = Encoding.ASCII.GetString(data, 0, firstNullIndex);
+        Compressed = data[firstNullIndex + 1] != 0;
+        CompressionMethod = (CompressionMethod) data[firstNullIndex + 2];
+
+        var languageTagLength = secondNullIndex - (firstNullIndex + 3);
+        LanguageTag = Encoding.ASCII.GetString(data, firstNullIndex + 3, languageTagLength);
+
+        var translatedKeywordLength = thirdNullIndex - (secondNullIndex + 1);
+        TranslatedKeyword = Encoding.ASCII.GetString(data, secondNullIndex, translatedKeywordLength);
+
+        var textLength = data.Length - (thirdNullIndex + 1);
+        Text = Encoding.Latin1.GetString(data, thirdNullIndex + 1, textLength);
     }
 
     public override string FormatData()
     {
-        return $"Type: {Type}";
-        // Console.WriteLine($"\tKeyword: {Keyword}");
-        // Console.WriteLine($"\tCompression Flag: {(CompressionFlag ? "Compressed" : "Uncompressed")}");
-        // Console.WriteLine($"\tCompression Method: {CompressionMethod}");
-        // Console.WriteLine($"\tLanguage Tag: {LanguageTag}");
-        // Console.WriteLine($"\tTranslated Keyword: {TranslatedKeyword}");
-        // Console.WriteLine($"\tText: {Text}");
+        var builder = new StringBuilder();
+
+        builder.Append($"Type: {Type}");
+        if (Keyword != string.Empty)
+        {
+            builder.Append($"Keyword: {Keyword}");
+        }
+
+        builder.Append($"Compressed: {Compressed}");
+        if (Compressed)
+        {
+            builder.Append($"Compression method: {CompressionMethod}");
+        }
+        
+        if (LanguageTag != string.Empty)
+        {
+            builder.Append($"Language tag: {LanguageTag}");
+        }
+        if (TranslatedKeyword != string.Empty)
+        {
+            builder.Append($"Translated keyword: {TranslatedKeyword}");
+        }
+        
+        builder.Append(Text.Length < 100 ? Text : $"{Text[..100]}...");
+
+        return builder.ToString();
     }
 }

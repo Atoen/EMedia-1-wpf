@@ -4,8 +4,6 @@ public class sBITChunk : PngChunk
 {
     public byte[] SignificantBits { get; }
 
-    public override bool RemoveWhenAnonymizing => true;
-
     public sBITChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)
     {

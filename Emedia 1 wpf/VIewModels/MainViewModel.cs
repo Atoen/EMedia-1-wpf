@@ -22,11 +22,12 @@ public partial class MainViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(AnonymizeImageCommand))]
     private bool _fileIsValid;
     
-    [ObservableProperty] private ObservableCollection<string> _logs = [];
+    [ObservableProperty] private ObservableCollection<Log> _logs = [];
     [ObservableProperty] private ObservableCollection<Metadata> _metadata = [];
     
     private readonly PngService _pngService = new();
     private readonly Dispatcher _dispatcher = Application.Current.Dispatcher;
+    private readonly List<PngChunk> _chunks = [];
 
     private void ClearData()
     {
@@ -36,6 +37,7 @@ public partial class MainViewModel : ObservableObject
         
         Logs.Clear();
         Metadata.Clear();
+        _chunks.Clear();
     }
 
     private bool CanShowImage => FileIsValid;
@@ -46,6 +48,19 @@ public partial class MainViewModel : ObservableObject
     {
         var dialog = new SaveFileDialog { Filter = "PNG *.png|*.png" };
         dialog.ShowDialog();
+        
+        if (dialog.FileName == string.Empty) return;
+        
+        await using var stream = dialog.OpenFile();
+        try
+        {
+            await _pngService.AnonymizeImageAsync(_chunks, stream);
+            MessageBox.Show("Successfully anonymized file", "Emedia");
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show($"Error while anonymizing file: {e.Message}", "Emedia", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanShowImage))]
@@ -81,8 +96,10 @@ public partial class MainViewModel : ObservableObject
 
     private async Task ReadFileAsync(string filename)
     {
-        void Callback(string message) => _dispatcher.Invoke(() => Logs.Add(message));
+        void Callback(Log log) => _dispatcher.Invoke(() => Logs.Add(log));
         var chunks = await _pngService.ReadDataAsync(filename, Callback);
+        
+        _chunks.AddRange(chunks);
         foreach (var metadata in ReadMetadata(chunks))
         {
             Metadata.Add(metadata);

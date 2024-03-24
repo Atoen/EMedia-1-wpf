@@ -8,10 +8,8 @@ public class sPLTChunk : PngChunk
     public byte SampleDepth { get; }
 
     public byte[] SampleInfo { get; }
-    
-    public override bool RemoveWhenAnonymizing => true;
-    
-    public override bool AllowMultiple => true;
+
+    public virtual bool AllowMultiple => true;
     
     
     public sPLTChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :

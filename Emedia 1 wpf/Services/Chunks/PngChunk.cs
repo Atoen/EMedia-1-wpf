@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.IO.Compression;
-using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using Emedia_1_wpf.Extensions;
 
@@ -14,9 +13,8 @@ public class PngChunk
     public uint Crc { get; }
     public bool CrcValid { get; }
 
-    public virtual bool AllowMultiple => false;
-    public virtual bool RemoveWhenAnonymizing => false;
-    
+    public virtual bool RemoveWhenAnonymizing => true;
+
     public virtual string FormatData() => $"Type: {Type}, Length: {Length}, CRC: {CrcValid}";
 
     protected virtual void EnsureValid() { }
@@ -75,12 +73,12 @@ public class PngChunk
         };
     }
 
-    public void AppendToStream(Stream stream)
+    public async Task AppendToStreamAsync(Stream stream)
     {
-        stream.WriteUInt(Length);
-        stream.WriteAsciiString(Type);
-        stream.Write(Data);
-        stream.WriteUInt(Crc);
+        await stream.WriteUIntAsync(Length);
+        await stream.WriteAsciiStringAsync(Type);
+        await stream.WriteAsync(Data);
+        await stream.WriteUIntAsync(Crc);
     }
 
     public static byte[] Decompress(byte[] data)

@@ -11,6 +11,8 @@ public class IHDRChunk : PngChunk
     public CompressionMethod CompressionMethod { get; }
     public FilterMethod FilterMethod { get; }
     public InterlaceMethod InterlaceMethod { get; }
+    
+    public override bool RemoveWhenAnonymizing => false;
 
     public IHDRChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)

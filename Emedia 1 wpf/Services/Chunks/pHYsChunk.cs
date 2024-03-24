@@ -8,8 +8,6 @@ public class pHYsChunk : PngChunk
     public uint PixelsPerUnitY { get; }
     public UnitSpecifier UnitSpecifier { get; }
 
-    public override bool RemoveWhenAnonymizing => true;
-
     public pHYsChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)
     {
