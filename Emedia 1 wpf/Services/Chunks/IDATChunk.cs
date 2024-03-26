@@ -13,4 +13,10 @@ public class IDATChunk : PngChunk
     }
 
     public override string FormatData() => $"Type: {Type}, Data Length: {ImageData.Length}";
+
+    public static IDATChunk FromBytes(byte[] data)
+    {
+        var crc = Crc32.Get([.."IDAT"u8, ..data]);
+        return new IDATChunk((uint) data.Length, data, "IDAT", crc, true);
+    }
 }

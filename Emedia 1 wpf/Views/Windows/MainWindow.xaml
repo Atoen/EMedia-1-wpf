@@ -23,8 +23,8 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <DockPanel Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2">
-            <StackPanel Orientation="Horizontal" Margin="0 0 0 10" DockPanel.Dock="Left">
+        <DockPanel Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0 0 0 10">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                 <Button Padding="10" Command="{Binding SelectFileCommand}">Open file</Button>
                 <Button Margin="10 0" Padding="10" Command="{Binding ShowImageCommand}">View image</Button>
                 <TextBlock Text="{Binding SuccessMessage}" VerticalAlignment="Center"
@@ -32,11 +32,18 @@
                 <TextBlock Text="{Binding ErrorMessage}" VerticalAlignment="Center"
                            FontSize="14" Foreground="Red" />
             </StackPanel>
-
-            <Button Padding="10" Margin="10 0 0 0" HorizontalAlignment="Right" DockPanel.Dock="Right"
-                    Command="{Binding AnonymizeImageCommand}">
-                Anonymize
-            </Button>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Command="{Binding AnonymizeImageCommand}" Padding="10">
+                    Anonymize
+                </Button>
+                <Button Command="{Binding EncryptImageCommand}" Padding="10"
+                        Margin="10 0" >
+                    Encrypt
+                </Button>
+                <Button Command="{Binding DecryptImageCommand}" Padding="10">
+                    Decrypt
+                </Button>
+            </StackPanel>
         </DockPanel>
 
         <Grid Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1" VerticalAlignment="Stretch">
@@ -60,7 +67,6 @@
                 </ListView.ItemTemplate>
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
-                        <Setter Property="Foreground" Value="Black" />
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding Type}" Value="{x:Static models:LogType.Error}">
                                 <Setter Property="Foreground" Value="Red" />

@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Numerics;
 using System.Windows;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -20,6 +21,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ShowImageCommand))]
     [NotifyCanExecuteChangedFor(nameof(AnonymizeImageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(EncryptImageCommand))]
     private bool _fileIsValid;
     
     [ObservableProperty] private ObservableCollection<Log> _logs = [];
@@ -39,11 +41,56 @@ public partial class MainViewModel : ObservableObject
         Metadata.Clear();
         _chunks.Clear();
     }
+    
+    private bool FileIsAvailable => FileIsValid;
+    
+    [RelayCommand]
+    private async Task DecryptImageAsync(CancellationToken cancellationToken)
+    {
+        var dialog = new OpenFileDialog { Multiselect = false };
+        if (dialog.ShowDialog() is not true) return;
+        
+        ClearData();
+        
+        Filename = dialog.FileName;
+        var valid = await _pngService.VerifyPngAsync(Filename);
+        if (valid)
+        {
+            SuccessMessage = $"{dialog.SafeFileName} is valid PNG file";
+        }
+        else
+        {
+            ErrorMessage = $"{dialog.SafeFileName} is not valid PNG file";
+            return;
+        }
+        
+        var chunks = await _pngService.DecryptAsync(Filename);
+        _chunks.AddRange(chunks);
+        
+        FileIsValid = true;
+    }
 
-    private bool CanShowImage => FileIsValid;
-    private bool CanAnonymize => FileIsValid;
+    [RelayCommand(CanExecute = nameof(FileIsAvailable))]
+    private async Task EncryptImageAsync(CancellationToken cancellationToken)
+    {
+        var dialog = new SaveFileDialog { Filter = "PNG *.png|*.png" };
+        dialog.ShowDialog();
+        
+        if (dialog.FileName == string.Empty) return;
+        
+        await using var stream = dialog.OpenFile();
+        try
+        {
+            await _pngService.EncryptAsync(_chunks, stream);
+            MessageBox.Show("Successfully encrypted file", "Emedia");
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show($"Error while encrypting file: {e.Message}", "Emedia", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
 
-    [RelayCommand(CanExecute = nameof(CanAnonymize))]
+    [RelayCommand(CanExecute = nameof(FileIsAvailable))]
     private async Task AnonymizeImageAsync(CancellationToken cancellationToken)
     {
         var dialog = new SaveFileDialog { Filter = "PNG *.png|*.png" };
@@ -63,7 +110,7 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanShowImage))]
+    [RelayCommand(CanExecute = nameof(FileIsAvailable))]
     private void ShowImage()
     {
         var imageWindow = new ImageWindow(Filename);
@@ -133,7 +180,8 @@ public partial class MainViewModel : ObservableObject
                 ],
                 gAMAChunk gAmaChunk => [new Metadata("Gamma", gAmaChunk.Gamma)],
                 iTXtChunk iTXtChunk =>
-                    [new Metadata("International text", $"{iTXtChunk.Keyword}: {iTXtChunk.Text}")],
+                    [new Metadata("International text", $"Compressed:{iTXtChunk.Compressed}\n{iTXtChunk.Keyword}: {iTXtChunk
+                        .Text}")],
                 oFFsChunk oFFsChunk => [new Metadata("Offset", $"({oFFsChunk.OffsetX}, {oFFsChunk.OffsetY}) {oFFsChunk.Unit}")],
                 pHYsChunk pHYsChunk =>
                     [new Metadata("Physical dimensions", $"({pHYsChunk.PixelsPerUnitX}, {pHYsChunk.PixelsPerUnitY}) pixels per {pHYsChunk.UnitSpecifier}")],

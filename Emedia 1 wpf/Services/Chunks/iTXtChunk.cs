@@ -30,10 +30,10 @@ public class iTXtChunk : PngChunk
         LanguageTag = Encoding.ASCII.GetString(data, firstNullIndex + 3, languageTagLength);
 
         var translatedKeywordLength = thirdNullIndex - (secondNullIndex + 1);
-        TranslatedKeyword = Encoding.ASCII.GetString(data, secondNullIndex, translatedKeywordLength);
+        TranslatedKeyword = Encoding.UTF8.GetString(data, secondNullIndex, translatedKeywordLength);
 
         var textLength = data.Length - (thirdNullIndex + 1);
-        Text = Encoding.Latin1.GetString(data, thirdNullIndex + 1, textLength);
+        Text = Encoding.UTF8.GetString(data, thirdNullIndex + 1, textLength);
     }
 
     public override string FormatData()
@@ -43,24 +43,25 @@ public class iTXtChunk : PngChunk
         builder.Append($"Type: {Type}");
         if (Keyword != string.Empty)
         {
-            builder.Append($"Keyword: {Keyword}");
+            builder.Append($" Keyword: {Keyword}");
         }
 
-        builder.Append($"Compressed: {Compressed}");
+        builder.Append($" Compressed: {Compressed}");
         if (Compressed)
         {
-            builder.Append($"Compression method: {CompressionMethod}");
+            builder.Append($" Compression method: {CompressionMethod}");
         }
         
         if (LanguageTag != string.Empty)
         {
-            builder.Append($"Language tag: {LanguageTag}");
+            builder.Append($" Language tag: {LanguageTag}");
         }
         if (TranslatedKeyword != string.Empty)
         {
-            builder.Append($"Translated keyword: {TranslatedKeyword}");
+            builder.Append($" Translated keyword: {TranslatedKeyword}");
         }
-        
+
+        builder.Append(' ');
         builder.Append(Text.Length < 100 ? Text : $"{Text[..100]}...");
 
         return builder.ToString();

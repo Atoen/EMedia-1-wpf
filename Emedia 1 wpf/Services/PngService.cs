@@ -8,7 +8,61 @@ namespace Emedia_1_wpf.Services;
 public class PngService
 {
     public static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    public static readonly byte[] DeflateSignature = [120, 94];
     public static int SignatureLength => PngSignature.Length;
+    
+    private readonly CryptoService _cryptoService = new();
+    
+    public async Task<List<PngChunk>> DecryptAsync(string filePath)
+    {
+        var chunks = await ReadDataAsync(filePath);
+        var data = chunks.Where(x => x is IDATChunk)
+            .SelectMany(x => x.Data)
+            .Skip(2)
+            .ToArray();
+        
+        var decompressed = await PngChunk.DecompressAsync(data);
+        var decrypted = _cryptoService.Decrypt(decompressed);
+        var compressed = await PngChunk.CompressAsync(decrypted);
+        
+        var otherChunks = chunks.Where(x => x is not IDATChunk)
+            .ToList();
+        
+        otherChunks.Add(IDATChunk.FromBytes(compressed));
+        (otherChunks[^1], otherChunks[^2]) = (otherChunks[^2], otherChunks[^1]);
+
+        return otherChunks;
+    }
+
+    public async Task EncryptAsync(List<PngChunk> chunks, Stream destinationStream)
+    {
+        var data = chunks.Where(x => x is IDATChunk)
+            .SelectMany(x => x.Data)
+            .Skip(2)
+            .ToArray();
+
+        var decompressed = await PngChunk.DecompressAsync(data);
+        var encrypted = _cryptoService.Encrypt(decompressed);
+        var compressed = await PngChunk.CompressAsync(encrypted);
+        
+        var encryptedChunk = IDATChunk.FromBytes(compressed);
+
+        var indexOfData = chunks.FindIndex(x => x is IDATChunk);
+        var otherChunks = chunks.Where(x => x is not IDATChunk)
+            .ToArray();
+
+        await destinationStream.WriteAsync(PngSignature);
+        for (var i = 0; i < otherChunks.Length; i++)
+        {
+            var chunk = otherChunks[i];
+            if (i == indexOfData)
+            {
+                await encryptedChunk.AppendToStreamAsync(destinationStream);
+            }
+
+            await chunk.AppendToStreamAsync(destinationStream);
+        }
+    }
     
     public async Task<bool> VerifyPngAsync(string filePath)
     {
@@ -23,7 +77,7 @@ public class PngService
         }
     }
 
-    public async Task<List<PngChunk>> ReadDataAsync(string filePath, Action<Log>? callback)
+    public async Task<List<PngChunk>> ReadDataAsync(string filePath, Action<Log>? callback = null)
     {
         var chunks = new List<PngChunk>();
         await using var stream = File.Open(filePath, FileMode.Open);
@@ -56,10 +110,8 @@ public class PngService
         var data = chunksToSave.Where(x => x is IDATChunk)
             .SelectMany(x => x.Data)
             .ToArray();
-        
-        var crc = Crc32.Get([.."IDAT"u8, ..data]);
-        var dataChunk = new IDATChunk((uint) data.Length, data, "IDAT", crc, true);
 
+        var dataChunk = IDATChunk.FromBytes(data);
         if (chunksToSave is not [IHDRChunk header, .., IENDChunk end])
         {
             throw new InvalidOperationException();

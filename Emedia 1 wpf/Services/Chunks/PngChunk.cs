@@ -100,6 +100,16 @@ public class PngChunk
         await deflateStream.CopyToAsync(decompressedStream);
         return decompressedStream.ToArray();
     }
+    
+    public static async Task<byte[]> CompressAsync(byte[] data)
+    {
+        using var compressedStream = new MemoryStream();
+        using var sourceStream = new MemoryStream(data);
+        await using var deflateStream = new DeflateStream(compressedStream, CompressionMode.Compress, leaveOpen: true);
+
+        await sourceStream.CopyToAsync(deflateStream);
+        return compressedStream.ToArray();
+    }
 
     public static string DecompressString(byte[] data, Encoding encoding)
     {
