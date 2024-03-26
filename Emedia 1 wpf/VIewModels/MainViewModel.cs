@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.IO;
 using System.Numerics;
 using System.Windows;
 using System.Windows.Threading;
@@ -17,18 +18,16 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _filename = string.Empty;
     [ObservableProperty] private string _errorMessage = string.Empty;
     [ObservableProperty] private string _successMessage = string.Empty;
+    [ObservableProperty] private bool _useLibrary;
     
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ShowImageCommand))]
-    [NotifyCanExecuteChangedFor(nameof(AnonymizeImageCommand))]
-    [NotifyCanExecuteChangedFor(nameof(EncryptImageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ShowImageCommand), nameof(AnonymizeImageCommand), nameof(EncryptImageCommand), nameof(DecryptImageCommand))]
     private bool _fileIsValid;
     
     [ObservableProperty] private ObservableCollection<Log> _logs = [];
     [ObservableProperty] private ObservableCollection<Metadata> _metadata = [];
     
     private readonly PngService _pngService = new();
-    private readonly Dispatcher _dispatcher = Application.Current.Dispatcher;
     private readonly List<PngChunk> _chunks = [];
 
     private void ClearData()
@@ -42,46 +41,30 @@ public partial class MainViewModel : ObservableObject
         _chunks.Clear();
     }
     
-    private bool FileIsAvailable => FileIsValid;
-    
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(FileIsValid))]
     private async Task DecryptImageAsync(CancellationToken cancellationToken)
     {
-        var dialog = new OpenFileDialog { Multiselect = false };
-        if (dialog.ShowDialog() is not true) return;
+        if (GetWriteFilePath() is not { } path) return;
         
-        ClearData();
-        
-        Filename = dialog.FileName;
-        var valid = await _pngService.VerifyPngAsync(Filename);
-        if (valid)
-        {
-            SuccessMessage = $"{dialog.SafeFileName} is valid PNG file";
-        }
-        else
-        {
-            ErrorMessage = $"{dialog.SafeFileName} is not valid PNG file";
-            return;
-        }
-        
-        var chunks = await _pngService.DecryptAsync(Filename);
-        _chunks.AddRange(chunks);
-        
-        FileIsValid = true;
-    }
-
-    [RelayCommand(CanExecute = nameof(FileIsAvailable))]
-    private async Task EncryptImageAsync(CancellationToken cancellationToken)
-    {
-        var dialog = new SaveFileDialog { Filter = "PNG *.png|*.png" };
-        dialog.ShowDialog();
-        
-        if (dialog.FileName == string.Empty) return;
-        
-        await using var stream = dialog.OpenFile();
         try
         {
-            await _pngService.EncryptAsync(_chunks, stream);
+            await _pngService.DecryptAsync(_chunks, path, UseLibrary);
+            MessageBox.Show("Successfully decrypted file", "Emedia");
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show($"Error while decrypting file: {e.Message}", "Emedia", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(FileIsValid))]
+    private async Task EncryptImageAsync(CancellationToken cancellationToken)
+    {
+        if (GetWriteFilePath() is not { } path) return;
+        
+        try
+        {
+            await _pngService.EncryptAsync(_chunks, path, UseLibrary);
             MessageBox.Show("Successfully encrypted file", "Emedia");
         }
         catch (Exception e)
@@ -90,18 +73,14 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    [RelayCommand(CanExecute = nameof(FileIsAvailable))]
+    [RelayCommand(CanExecute = nameof(FileIsValid))]
     private async Task AnonymizeImageAsync(CancellationToken cancellationToken)
     {
-        var dialog = new SaveFileDialog { Filter = "PNG *.png|*.png" };
-        dialog.ShowDialog();
+        if (GetWriteFilePath() is not { } path) return;
         
-        if (dialog.FileName == string.Empty) return;
-        
-        await using var stream = dialog.OpenFile();
         try
         {
-            await _pngService.AnonymizeImageAsync(_chunks, stream);
+            await _pngService.AnonymizeImageAsync(_chunks, path);
             MessageBox.Show("Successfully anonymized file", "Emedia");
         }
         catch (Exception e)
@@ -110,11 +89,10 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-    [RelayCommand(CanExecute = nameof(FileIsAvailable))]
+    [RelayCommand(CanExecute = nameof(FileIsValid))]
     private void ShowImage()
     {
-        var imageWindow = new ImageWindow(Filename);
-        imageWindow.Show();
+        new ImageWindow(Filename).Show();
     }
 
     [RelayCommand]
@@ -124,27 +102,41 @@ public partial class MainViewModel : ObservableObject
         if (dialog.ShowDialog() is not true) return;
         
         ClearData();
-        
+
         Filename = dialog.FileName;
-        var valid = await _pngService.VerifyPngAsync(Filename);
-        if (valid)
+
+        var isValid = await _pngService.VerifyPngAsync(dialog.FileName);
+        SetVerificationResultMessage(dialog.SafeFileName, isValid);
+
+        FileIsValid = isValid;
+        if (FileIsValid)
         {
-            SuccessMessage = $"{dialog.SafeFileName} is valid PNG file";
+            await ReadFileAsync(dialog.FileName);
+        }
+    }
+
+    private void SetVerificationResultMessage(string filename, bool isValid)
+    {
+        if (isValid)
+        {
+            SuccessMessage = $"{filename} is valid PNG file";
         }
         else
         {
-            ErrorMessage = $"{dialog.SafeFileName} is not valid PNG file";
-            return;
+            ErrorMessage = $"{filename} is not valid PNG file";
         }
-
-        FileIsValid = true;
-        await ReadFileAsync(dialog.FileName);
     }
 
-    private async Task ReadFileAsync(string filename)
+    private string? GetWriteFilePath()
     {
-        void Callback(Log log) => _dispatcher.Invoke(() => Logs.Add(log));
-        var chunks = await _pngService.ReadDataAsync(filename, Callback);
+        var dialog = new SaveFileDialog { Filter = "PNG *.png|*.png" };
+        return dialog.ShowDialog() is true ? dialog.FileName : null;
+    }
+    
+    private async Task ReadFileAsync(string filepath)
+    {
+        void Callback(Log log) => Logs.Add(log);
+        var chunks = await _pngService.ReadDataAsync(filepath, Callback);
         
         _chunks.AddRange(chunks);
         foreach (var metadata in ReadMetadata(chunks))

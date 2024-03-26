@@ -40,9 +40,15 @@
                         Margin="10 0" >
                     Encrypt
                 </Button>
-                <Button Command="{Binding DecryptImageCommand}" Padding="10">
+                <Button Command="{Binding DecryptImageCommand}" Padding="10"
+                        Margin="0 0 10 0 ">
                     Decrypt
                 </Button>
+                
+                <StackPanel>
+                    <TextBlock HorizontalAlignment="Center">Library</TextBlock>
+                    <CheckBox IsChecked="{Binding UseLibrary}" HorizontalAlignment="Center" />
+                </StackPanel>
             </StackPanel>
         </DockPanel>
 
