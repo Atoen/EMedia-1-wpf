@@ -5,111 +5,136 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Emedia_1_wpf"
         xmlns:models="clr-namespace:Emedia_1_wpf.Models"
-        xmlns:vIewModels="clr-namespace:Emedia_1_wpf.VIewModels"
+        xmlns:viewModels="clr-namespace:Emedia_1_wpf.VIewModels"
+        xmlns:userControls="clr-namespace:Emedia_1_wpf.Views.User_Controls"
         mc:Ignorable="d"
-        Title="EMedia 1" Height="450" Width="800" MinHeight="300" MinWidth="500">
+        Title="{Binding WindowTitle}" Height="450" Width="800" MinHeight="300" MinWidth="500">
+    
+    <WindowChrome.WindowChrome>
+        <WindowChrome GlassFrameThickness="0" CornerRadius="0" CaptionHeight="0" />
+    </WindowChrome.WindowChrome>
+    
     <Window.DataContext>
-        <vIewModels:MainViewModel />
+        <viewModels:MainViewModel />
     </Window.DataContext>
 
-    <Grid Margin="10">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition />
-            <ColumnDefinition />
-        </Grid.ColumnDefinitions>
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
+            <RowDefinition />
         </Grid.RowDefinitions>
-
-        <DockPanel Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" Margin="0 0 0 10">
-            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                <Button Padding="10" Command="{Binding SelectFileCommand}">Open file</Button>
-                <Button Margin="10 0" Padding="10" Command="{Binding ShowImageCommand}">View image</Button>
-                <TextBlock Text="{Binding SuccessMessage}" VerticalAlignment="Center"
-                           FontSize="14" Foreground="Green" />
-                <TextBlock Text="{Binding ErrorMessage}" VerticalAlignment="Center"
-                           FontSize="14" Foreground="Red" />
-            </StackPanel>
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Command="{Binding AnonymizeImageCommand}" Padding="10">
-                    Anonymize
-                </Button>
-                <Button Command="{Binding EncryptImageCommand}" Padding="10"
-                        Margin="10 0" >
-                    Encrypt
-                </Button>
-                <Button Command="{Binding DecryptImageCommand}" Padding="10"
-                        Margin="0 0 10 0 ">
-                    Decrypt
-                </Button>
-                
-                <StackPanel>
-                    <TextBlock HorizontalAlignment="Center">Library</TextBlock>
-                    <CheckBox IsChecked="{Binding UseLibrary}" HorizontalAlignment="Center" />
+        
+        <userControls:TitleBar Grid.Row="0" x:Name="TitleBar" MouseLeftButtonDown="TitleBar_OnMouseLeftButtonDown" 
+                               ProgressValue="{Binding Progress}"/>
+        
+        <Grid Grid.Row="1" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            
+            <DockPanel Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2">
+                <StackPanel DockPanel.Dock="Left" Margin="0 0 10 0" Orientation="Horizontal">
+                    <Button Padding="10" Command="{Binding SelectFileCommand}">Open file</Button>
+                    <Button Margin="10 0" Padding="10" Command="{Binding ShowImageCommand}">View image</Button>
                 </StackPanel>
-            </StackPanel>
-        </DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Command="{Binding DisplayDFTCommand}" Padding="10">
+                        Fourier
+                    </Button>
+                    <Button Command="{Binding AnonymizeImageCommand}" Padding="10"
+                            Margin="10 0">
+                        Anonymize
+                    </Button>
+                    <Rectangle VerticalAlignment="Stretch" Width="1" Stroke="Black"/>
+                    <Button Command="{Binding EncryptImageCommand}" Padding="10"
+                            Margin="10 0" >
+                        Encrypt
+                    </Button>
+                    <Button Command="{Binding DecryptImageCommand}" Padding="10"
+                            Margin="0 0 10 0 ">
+                        Decrypt
+                    </Button>
+                    <StackPanel>
+                        <TextBlock HorizontalAlignment="Center">Library</TextBlock>
+                        <CheckBox IsChecked="{Binding UseLibrary}" HorizontalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </DockPanel>
+            
+            <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0 10"
+                       Text="{Binding SuccessMessage}" 
+                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                       FontSize="14" Foreground="Green" />
+            <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0 10"
+                       Text="{Binding ErrorMessage}"
+                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                       FontSize="14" Foreground="Red" />
 
-        <Grid Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1" VerticalAlignment="Stretch">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto" />
-                <RowDefinition />
-            </Grid.RowDefinitions>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Margin="0 0 5 0">PNG chunks:</TextBlock>
-                <TextBlock Text="{Binding Logs.Count}" />
-            </StackPanel>
+            <Grid Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2" VerticalAlignment="Stretch">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Margin="0 0 5 0">PNG chunks:</TextBlock>
+                    <TextBlock Text="{Binding Logs.Count}" />
+                </StackPanel>
+                <ListView Grid.Row="1" ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          VirtualizingPanel.ScrollUnit="Pixel"
+                          ItemsSource="{Binding Logs}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Message}" />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Type}" Value="{x:Static models:LogType.Error}">
+                                    <Setter Property="Foreground" Value="Red" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Type}" Value="{x:Static models:LogType.Warning}">
+                                    <Setter Property="Foreground" Value="Goldenrod" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                </ListView>
+            </Grid>
 
-            <ListView Grid.Row="1" ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                      ScrollViewer.VerticalScrollBarVisibility="Auto"
-                      VirtualizingPanel.ScrollUnit="Pixel"
-                      ItemsSource="{Binding Logs}">
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Message}" />
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-                <ListView.ItemContainerStyle>
-                    <Style TargetType="ListViewItem">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Type}" Value="{x:Static models:LogType.Error}">
-                                <Setter Property="Foreground" Value="Red" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Type}" Value="{x:Static models:LogType.Warning}">
-                                <Setter Property="Foreground" Value="Goldenrod" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ListView.ItemContainerStyle>
-            </ListView>
-        </Grid>
-
-        <Grid Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2" VerticalAlignment="Stretch">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="auto" />
-                <RowDefinition />
-            </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0">Metadata</TextBlock>
-            <ListView Grid.Row="1" ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                      ScrollViewer.VerticalScrollBarVisibility="Auto"
-                      VirtualizingPanel.ScrollUnit="Pixel"
-                      ItemsSource="{Binding Metadata}"
-                      HorizontalContentAlignment="Stretch">
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="{Binding Name}" Margin="0 0 10 0" />
-                            <TextBlock Text="{Binding Value}" Grid.Column="1" MaxWidth="300" TextWrapping="Wrap" />
-                        </Grid>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
+            <Grid Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="3" VerticalAlignment="Stretch">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0">Metadata</TextBlock>
+                <ListView Grid.Row="1" ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          VirtualizingPanel.ScrollUnit="Pixel"
+                          ItemsSource="{Binding Metadata}"
+                          HorizontalContentAlignment="Stretch">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Name}" Margin="0 0 10 0" />
+                                <TextBlock Text="{Binding Value}" Grid.Column="1" MaxWidth="300" TextWrapping="Wrap" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
         </Grid>
     </Grid>
 </Window>

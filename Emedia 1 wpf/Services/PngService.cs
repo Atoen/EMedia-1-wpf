@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Text;
 using Emedia_1_wpf.Models;
 using Emedia_1_wpf.Services.Chunks;
 
@@ -13,7 +12,8 @@ public class PngService
     
     private readonly CryptoService _cryptoService = new();
     
-    public async Task DecryptAsync(List<PngChunk> chunks, string filePath, bool useLibrary)
+    public async Task DecryptAsync(List<PngChunk> chunks, string filePath, bool useLibrary, IProgress<double>? 
+            progress = null)
     {
         await using var stream = File.Create(filePath);
         var data = chunks.Where(x => x is IDATChunk)
@@ -22,7 +22,7 @@ public class PngService
             .ToArray();
         
         var decompressed = await PngChunk.DecompressAsync(data);
-        var decrypted = _cryptoService.Decrypt(decompressed, useLibrary);
+        var decrypted = await _cryptoService.DecryptAsync(decompressed, useLibrary, progress);
         var compressed = await PngChunk.CompressAsync(decrypted);
         
         var otherChunks = chunks.Where(x => x is not IDATChunk)
@@ -38,7 +38,8 @@ public class PngService
         }
     }
 
-    public async Task EncryptAsync(List<PngChunk> chunks, string filePath, bool useLibrary)
+    public async Task EncryptAsync(List<PngChunk> chunks, string filePath, bool useLibrary, IProgress<double>? 
+        progress = null)
     {
         await using var stream = File.Create(filePath);
         var data = chunks.Where(x => x is IDATChunk)
@@ -47,7 +48,7 @@ public class PngService
             .ToArray();
 
         var decompressed = await PngChunk.DecompressAsync(data);
-        var encrypted = _cryptoService.Encrypt(decompressed, useLibrary);
+        var encrypted = await _cryptoService.EncryptAsync(decompressed, useLibrary, progress);
         var compressed = await PngChunk.CompressAsync(encrypted);
         
         var encryptedChunk = IDATChunk.FromBytes(compressed);

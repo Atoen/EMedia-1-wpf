@@ -1,8 +1,6 @@
 ﻿using System.Collections.ObjectModel;
-using System.IO;
-using System.Numerics;
 using System.Windows;
-using System.Windows.Threading;
+using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Emedia_1_wpf.Models;
@@ -15,20 +13,33 @@ namespace Emedia_1_wpf.VIewModels;
 
 public partial class MainViewModel : ObservableObject
 {
+    private const string DefaultWindowTitle = "EMedia";
+    
     [ObservableProperty] private string _filename = string.Empty;
     [ObservableProperty] private string _errorMessage = string.Empty;
     [ObservableProperty] private string _successMessage = string.Empty;
     [ObservableProperty] private bool _useLibrary;
+    [ObservableProperty] private string _windowTitle = DefaultWindowTitle;
+    [ObservableProperty] private double _progress;
     
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ShowImageCommand), nameof(AnonymizeImageCommand), nameof(EncryptImageCommand), nameof(DecryptImageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ShowImageCommand), nameof(AnonymizeImageCommand), nameof(EncryptImageCommand),
+        nameof(DecryptImageCommand), nameof(DisplayDFTCommand))]
     private bool _fileIsValid;
     
     [ObservableProperty] private ObservableCollection<Log> _logs = [];
     [ObservableProperty] private ObservableCollection<Metadata> _metadata = [];
     
     private readonly PngService _pngService = new();
+    private readonly DFTService _dftService = new();
     private readonly List<PngChunk> _chunks = [];
+
+    private readonly Progress<double> _progressReporter;
+
+    public MainViewModel()
+    {
+        _progressReporter = new Progress<double>(value => Progress = value);
+    }
 
     private void ClearData()
     {
@@ -40,6 +51,26 @@ public partial class MainViewModel : ObservableObject
         Metadata.Clear();
         _chunks.Clear();
     }
+
+    private void CryptoOperationEnded()
+    {
+        Progress = 0;
+        Mouse.OverrideCursor = Cursors.Arrow;
+        WindowTitle = DefaultWindowTitle;
+    }
+
+    [RelayCommand(CanExecute = nameof(FileIsValid))]
+    private void DisplayDFT()
+    {
+        try
+        {
+            _dftService.DisplayDFT(Filename);
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show($"Error while calculating DFT of file: {e.Message}", "Emedia", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
     
     [RelayCommand(CanExecute = nameof(FileIsValid))]
     private async Task DecryptImageAsync(CancellationToken cancellationToken)
@@ -48,11 +79,16 @@ public partial class MainViewModel : ObservableObject
         
         try
         {
-            await _pngService.DecryptAsync(_chunks, path, UseLibrary);
+            Mouse.OverrideCursor = Cursors.Wait;
+            WindowTitle = $"Decrypting {Filename}";
+            
+            await _pngService.DecryptAsync(_chunks, path, UseLibrary, _progressReporter);
+            CryptoOperationEnded();
             MessageBox.Show("Successfully decrypted file", "Emedia");
         }
         catch (Exception e)
         {
+            CryptoOperationEnded();
             MessageBox.Show($"Error while decrypting file: {e.Message}", "Emedia", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -64,11 +100,16 @@ public partial class MainViewModel : ObservableObject
         
         try
         {
-            await _pngService.EncryptAsync(_chunks, path, UseLibrary);
+            Mouse.OverrideCursor = Cursors.Wait;
+            WindowTitle = $"Encrypting {Filename}";
+            
+            await _pngService.EncryptAsync(_chunks, path, UseLibrary, _progressReporter);
+            CryptoOperationEnded();
             MessageBox.Show("Successfully encrypted file", "Emedia");
         }
         catch (Exception e)
         {
+            CryptoOperationEnded();
             MessageBox.Show($"Error while encrypting file: {e.Message}", "Emedia", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -106,7 +147,7 @@ public partial class MainViewModel : ObservableObject
         Filename = dialog.FileName;
 
         var isValid = await _pngService.VerifyPngAsync(dialog.FileName);
-        SetVerificationResultMessage(dialog.SafeFileName, isValid);
+        SetVerificationResultMessage(dialog.FileName, isValid);
 
         FileIsValid = isValid;
         if (FileIsValid)

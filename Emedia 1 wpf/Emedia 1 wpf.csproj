@@ -11,11 +11,8 @@
 
     <ItemGroup>
       <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Converters\" />
-      <Folder Include="Views\User Controls\" />
+      <PackageReference Include="OpenCvSharp4.Windows" Version="4.9.0.20240103" />
+      <PackageReference Include="OpenCvSharp4.WpfExtensions" Version="4.9.0.20240103" />
     </ItemGroup>
 
     <ItemGroup>
@@ -24,6 +21,10 @@
         <XamlRuntime>Wpf</XamlRuntime>
         <SubType>Designer</SubType>
       </Page>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Converters\" />
     </ItemGroup>
 
 </Project>

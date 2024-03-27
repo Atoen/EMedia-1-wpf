@@ -18,12 +18,31 @@ public partial class ImageWindow
         {
             Title = Path.GetFileName(imagePath);
             
-            var bitmap = new BitmapImage(new Uri(imagePath));
-            ImageControl.Source = bitmap;
+            // prevent blocking the filestream by loading the image data indirectly
+            var data = File.ReadAllBytes(imagePath);
+            var image = LoadImage(data);
+            
+            ImageControl.Source = image;
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            MessageBox.Show($"Error: {ex.Message}");
+            MessageBox.Show($"Error while displaying image: {e.Message}");
         }
+    }
+    
+    private static BitmapImage LoadImage(byte[] imageData)
+    {
+        var image = new BitmapImage();
+        using var mem = new MemoryStream(imageData);
+        mem.Position = 0;
+        
+        image.BeginInit();
+        image.CreateOptions = BitmapCreateOptions.PreservePixelFormat;
+        image.CacheOption = BitmapCacheOption.OnLoad;
+        image.StreamSource = mem;
+        image.EndInit();
+        image.Freeze();
+        
+        return image;
     }
 }
