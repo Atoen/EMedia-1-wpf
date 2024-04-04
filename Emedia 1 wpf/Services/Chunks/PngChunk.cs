@@ -48,6 +48,7 @@ public class PngChunk
             Console.WriteLine($"Crc value is invalid. Expected: {expectedCrc}, actual: {crc}");
         }
 
+        
         return type switch
         {
             PngChunkType.IHDR => new IHDRChunk(length, data, typeName, crc, crcValid),
@@ -69,6 +70,7 @@ public class PngChunk
             PngChunkType.sBIT => new sBITChunk(length, data, typeName, crc, crcValid),
             PngChunkType.sPLT => new sPLTChunk(length, data, typeName, crc, crcValid),
             PngChunkType.sTER => new sTERChunk(length, data, typeName, crc, crcValid),
+            PngChunkType.eXIf => new eXIfChunk(length, data, typeName, crc, crcValid),
             _ => new PngChunk(length, data, typeName, crc, crcValid)
         };
     }
@@ -151,5 +153,6 @@ public enum PngChunkType
     sPLT, // Suggested palette
     tIME, // Image last-modification time
     oFFs, // Image offset
-    sTER  // Stereo image indicator
+    sTER, // Stereo image indicator
+    eXIf  // eXIf metadata
 }

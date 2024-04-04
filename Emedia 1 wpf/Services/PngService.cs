@@ -100,6 +100,10 @@ public class PngService
                 
                 chunks.Add(chunk);
             }
+            catch (ChunkException e)
+            {
+                Console.WriteLine($"Error in chunk: {e.ChunkType}, Message: {e.Message}");
+            }
             catch (Exception e)
             {
                 callback?.Invoke(new Log(LogType.Error, $"Error while parsing chunk: {e.Message}"));
