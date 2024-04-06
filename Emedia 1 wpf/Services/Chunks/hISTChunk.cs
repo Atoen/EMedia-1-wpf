@@ -29,7 +29,7 @@ public class hISTChunk : PngChunk
     {
         if (Data.Length != 2)
         {
-            throw new ArgumentException("hIST chunk data must be exactly 2 bytes long.");
+            throw new ChunkException(PngChunkType.hIST,"hIST chunk data must be exactly 2 bytes long.");
         }
     }
 }

@@ -19,7 +19,7 @@ public class gAMAChunk : PngChunk
     {
         if (Data.Length != 4)
         {
-            throw new ArgumentException("gAMA chunk data must be exactly 4 bytes long.");
+            throw new ChunkException(PngChunkType.gAMA,"gAMA chunk data must be exactly 4 bytes long.");
         }
     }
 }

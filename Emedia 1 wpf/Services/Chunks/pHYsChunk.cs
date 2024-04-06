@@ -24,7 +24,7 @@ public class pHYsChunk : PngChunk
     {
         if (Data.Length != 9)
         {
-            throw new ArgumentException("Invalid pHYs chunk data length.");
+            throw new ChunkException(PngChunkType.pHYs,"Invalid pHYs chunk data length.");
         }
     }
 }

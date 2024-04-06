@@ -19,7 +19,7 @@ public class iTXtChunk : PngChunk
         var thirdNullIndex = Array.IndexOf(data, (byte) 0, secondNullIndex + 1);
         if (firstNullIndex < 0 || secondNullIndex < 0 || thirdNullIndex < 0)
         {
-            throw new ArgumentException("iTXt chunk: missing null terminator");
+            throw new ChunkException(PngChunkType.iTXt,"iTXt chunk: missing null terminator");
         }
 
         Keyword = Encoding.ASCII.GetString(data, 0, firstNullIndex);

@@ -34,7 +34,7 @@ public class cHRMChunk : PngChunk
     {
         if (Data.Length != 32)
         {
-            throw new ArgumentException("Invalid cHRM chunk data length.");
+            throw new ChunkException(PngChunkType.cHRM,"Invalid cHRM chunk data length.");
         }
     }
 }

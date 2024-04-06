@@ -25,12 +25,12 @@ public class oFFsChunk : PngChunk
     {
         if (Data.Length != 9)
         {
-            throw new ArgumentException("oFFs chunk data must be exactly 9 bytes long.");
+            throw new ChunkException(PngChunkType.oFFs,"oFFs chunk data must be exactly 9 bytes long.");
         }
 
         if (!Enum.IsDefined(typeof(UnitType), Unit))
         {
-            throw new ArgumentException("Invalid bit data value.");
+            throw new ChunkException(PngChunkType.oFFs,"Invalid bit data value.");
         }
     }
 }
