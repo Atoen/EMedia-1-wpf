@@ -16,12 +16,12 @@ public class sTERChunk : PngChunk
     {
         if (Data.Length != 1)
         {
-            throw new ArgumentException("sTER chunk data must be exactly 1 byte long.");
+            throw new ChunkException(PngChunkType.sTER,"sTER chunk data must be exactly 1 byte long.");
         }
 
         if (!Enum.IsDefined(typeof(StereoIndicator), Indicator))
         {
-            throw new ArgumentException("Invalid bit StereoIndicator value.");
+            throw new ChunkException(PngChunkType.sTER,"Invalid bit StereoIndicator value.");
         }
     }
 }

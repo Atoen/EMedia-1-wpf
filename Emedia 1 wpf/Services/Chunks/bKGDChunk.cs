@@ -42,7 +42,7 @@ public class bKGDChunk : PngChunk
     {
         if (Data.Length != 2)
         {
-            throw new ArgumentException("bKGD chunk data must be exactly 2 bytes long.");
+            throw new ChunkException(PngChunkType.bKGD,"bKGD chunk data must be exactly 2 bytes long.");
         }
     }
 }

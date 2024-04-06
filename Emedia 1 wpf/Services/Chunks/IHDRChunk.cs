@@ -36,23 +36,23 @@ public class IHDRChunk : PngChunk
     {
         if (Data.Length != 13)
         {
-            throw new ArgumentException("Invalid IHDR chunk data length.");
+            throw new ChunkException(PngChunkType.IHDR,"Invalid IHDR chunk data length.");
         }
         
         if (!Enum.IsDefined(typeof(BitDepth), BitDepth))
-            throw new ArgumentException("Invalid bit depth value.");
+            throw new ChunkException(PngChunkType.IHDR,"Invalid bit depth value.");
 
         if (!Enum.IsDefined(typeof(ColorType), ColorType))
-            throw new ArgumentException("Invalid color type value.");
+            throw new ChunkException(PngChunkType.IHDR,"Invalid color type value.");
 
         if (!Enum.IsDefined(typeof(CompressionMethod), CompressionMethod))
-            throw new ArgumentException("Invalid compression method value.");
+            throw new ChunkException(PngChunkType.IHDR,"Invalid compression method value.");
 
         if (!Enum.IsDefined(typeof(FilterMethod), FilterMethod))
-            throw new ArgumentException("Invalid filter method value.");
+            throw new ChunkException(PngChunkType.IHDR,"Invalid filter method value.");
 
         if (!Enum.IsDefined(typeof(InterlaceMethod), InterlaceMethod))
-            throw new ArgumentException("Invalid interlace method value.");
+            throw new ChunkException(PngChunkType.IHDR,"Invalid interlace method value.");
         
         ValidateBitDepth();
     }
@@ -68,13 +68,13 @@ public class IHDRChunk : PngChunk
                     BitDepth != BitDepth.Bit8 &&
                     BitDepth != BitDepth.Bit16)
                 {
-                    throw new ArgumentException("Invalid bit depth for grayscale color type.");
+                    throw new ChunkException(PngChunkType.IHDR,"Invalid bit depth for grayscale color type.");
                 }
                 break;
             case ColorType.RGB:
                 if (BitDepth != BitDepth.Bit8 && BitDepth != BitDepth.Bit16)
                 {
-                    throw new ArgumentException("Invalid bit depth for true color color type.");
+                    throw new ChunkException(PngChunkType.IHDR,"Invalid bit depth for true color color type.");
                 }
                 break;
             case ColorType.PaletteIndex:
@@ -83,23 +83,23 @@ public class IHDRChunk : PngChunk
                     BitDepth != BitDepth.Bit4 &&
                     BitDepth != BitDepth.Bit8)
                 {
-                    throw new ArgumentException("Invalid bit depth for indexed color type.");
+                    throw new ChunkException(PngChunkType.IHDR,"Invalid bit depth for indexed color type.");
                 }
                 break;
             case ColorType.GrayscaleWithAlpha:
                 if (BitDepth != BitDepth.Bit8 && BitDepth != BitDepth.Bit16)
                 {
-                    throw new ArgumentException("Invalid bit depth for grayscale with alpha color type.");
+                    throw new ChunkException(PngChunkType.IHDR,"Invalid bit depth for grayscale with alpha color type.");
                 }
                 break;
             case ColorType.RGBA:
                 if (BitDepth != BitDepth.Bit8 && BitDepth != BitDepth.Bit16)
                 {
-                    throw new ArgumentException("Invalid bit depth for true color with alpha color type.");
+                    throw new ChunkException(PngChunkType.IHDR,"Invalid bit depth for true color with alpha color type.");
                 }
                 break;
             default:
-                throw new ArgumentException("Invalid color type.");
+                throw new ChunkException(PngChunkType.IHDR,"Invalid color type.");
         }
     }
 }

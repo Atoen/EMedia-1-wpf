@@ -16,7 +16,7 @@ public class sBITChunk : PngChunk
     {
         if (Data.Length != 1)
         {
-            throw new ArgumentException("sBIT chunk data must be exactly 1 byte long.");
+            throw new ChunkException(PngChunkType.sBIT,"sBIT chunk data must be exactly 1 byte long.");
         }
     }
 }

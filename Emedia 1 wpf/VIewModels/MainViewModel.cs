@@ -224,6 +224,7 @@ public partial class MainViewModel : ObservableObject
                 tEXtChunk tEXtChunk => [new Metadata("Text", $"{tEXtChunk.Keyword}: {tEXtChunk.Text}")],
                 tIMEChunk tImeChunk => [new Metadata("Date of modification", tImeChunk.LastModificationTime)],
                 zTXtChunk zTXtChunk => [new Metadata("Compressed text", $"Compression method: {zTXtChunk.CompressionMethod}\n{zTXtChunk.Keyword}: {zTXtChunk.Text}")],
+                eXIfChunk eXIfChunk => [new Metadata("eXIf data length", $"{eXIfChunk.MetaData.Length}")],
                 _ => Array.Empty<Metadata>()
             };
             

@@ -16,12 +16,12 @@ public class sRGBChunk : PngChunk
     {
         if (!Enum.IsDefined(typeof(RenderingIntent), RenderingIntent))
         {
-            throw new ArgumentException("Invalid rendering intent.");
+            throw new ChunkException(PngChunkType.sRGB,"Invalid rendering intent.");
         }
         
         if (Data.Length != 1)
         {
-            throw new ArgumentException("sRGB chunk data must be exactly 1 byte long.");
+            throw new ChunkException(PngChunkType.sRGB,"sRGB chunk data must be exactly 1 byte long.");
         }
     }
 }

@@ -18,7 +18,7 @@ public class PLTEChunk : PngChunk
     {
         if (Length % 3 != 0)
         {
-            throw new ArgumentException("Invalid PLTE chunk data length.");
+            throw new ChunkException(PngChunkType.PLTE,"Invalid PLTE chunk data length.");
         }
     }
 }

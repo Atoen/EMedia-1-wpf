@@ -21,7 +21,7 @@ public class tIMEChunk : PngChunk
     {
         if (Data.Length != 7)
         {
-            throw new ArgumentException("Invalid tIME chunk data length.");
+            throw new ChunkException(PngChunkType.tIME,"Invalid tIME chunk data length.");
         }
     }
 }
