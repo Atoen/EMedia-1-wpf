@@ -212,12 +212,10 @@ public partial class MainViewModel : ObservableObject
                     new Metadata("Blue Point", $"({cHrmChunk.BlueX}, {cHrmChunk.BlueY})")
                 ],
                 gAMAChunk gAmaChunk => [new Metadata("Gamma", gAmaChunk.Gamma)],
-                iTXtChunk iTXtChunk =>
-                    [new Metadata("International text", $"Compressed:{iTXtChunk.Compressed}\n{iTXtChunk.Keyword}: {iTXtChunk
-                        .Text}")],
+                iTXtChunk iTXtChunk => 
+                    [new Metadata("International text", $"Compressed:{iTXtChunk.Compressed}\n{iTXtChunk.Keyword}: {iTXtChunk.Text}")],
                 oFFsChunk oFFsChunk => [new Metadata("Offset", $"({oFFsChunk.OffsetX}, {oFFsChunk.OffsetY}) {oFFsChunk.Unit}")],
-                pHYsChunk pHYsChunk =>
-                    [new Metadata("Physical dimensions", $"({pHYsChunk.PixelsPerUnitX}, {pHYsChunk.PixelsPerUnitY}) pixels per {pHYsChunk.UnitSpecifier}")],
+                pHYsChunk pHYsChunk => [new Metadata("Physical dimensions", $"({pHYsChunk.PixelsPerUnitX}, {pHYsChunk.PixelsPerUnitY}) pixels per {pHYsChunk.UnitSpecifier}")],
                 sPLTChunk sPltChunk => [new Metadata("Suggested palette", sPltChunk.PaletteName)],
                 sRGBChunk sRgbChunk => [new Metadata("Rendering intent", sRgbChunk.RenderingIntent)],
                 sTERChunk sTerChunk => [new Metadata("Stereo indicator", sTerChunk.Indicator)],
