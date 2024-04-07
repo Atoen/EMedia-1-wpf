@@ -1,9 +1,10 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
+using Emedia_1_wpf.Models;
 
 namespace Emedia_1_wpf.Services.Chunks;
 
-public class iTXtChunk : PngChunk
+public partial class iTXtChunk : PngChunk
 {
     public string Keyword { get; }
     public bool Compressed { get; }
@@ -11,9 +12,11 @@ public class iTXtChunk : PngChunk
     public string LanguageTag { get; }
     public string TranslatedKeyword { get; }
     public string Text { get; }
-
     public string AdditionalData { get; }
+    
+    public List<Metadata> TagMetadata { get; } = [];
 
+    
     private static readonly char[] separator = new[] { '\n' };
 
     public iTXtChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
@@ -49,21 +52,32 @@ public class iTXtChunk : PngChunk
             return match.Groups[2].Value is "exif:" or "tiff:" ? match.Value : "";
         });
 
-        AdditionalData = Regex.Replace(cleanXmlString, @"\s+", " ")
+        AdditionalData = MyRegex().Replace(cleanXmlString, " ")
             .Replace("> <", "\n")
-            [2..]
-            [..^1]
+            [2..^1]
             .Replace(" ", "")
             .Replace("</", " ")
             .Replace(">", " ")
             .Replace("tiff:", "")
             .Replace("exif:", "");
         
-        AdditionalData = "\n" + RemoveAfterLastSpace(AdditionalData);
-        // Console.WriteLine(additionalData);
+        AdditionalData = RemoveAfterLastSpace(AdditionalData);
+
+        var lines = AdditionalData.Split('\n');
+
+        foreach (var line in lines)
+        {
+            var lineParts = line.Trim().Split(' ');
+
+            if (lineParts.Length >= 2)
+            {
+                TagMetadata.Add(new Metadata(lineParts[0], lineParts[1]));
+            }
+        }
+        // Console.WriteLine(AdditionalData);
     }
 
-    static string RemoveAfterLastSpace(string input)
+    private static string RemoveAfterLastSpace(string input)
     {
         var lines = input.Split(separator, StringSplitOptions.RemoveEmptyEntries);
         for (var i = 0; i < lines.Length; i++)
@@ -109,4 +123,7 @@ public class iTXtChunk : PngChunk
 
         return builder.ToString();
     }
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex MyRegex();
 }
