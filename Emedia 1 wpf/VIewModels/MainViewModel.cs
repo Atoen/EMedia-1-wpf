@@ -213,7 +213,11 @@ public partial class MainViewModel : ObservableObject
                 ],
                 gAMAChunk gAmaChunk => [new Metadata("Gamma", gAmaChunk.Gamma)],
                 iTXtChunk iTXtChunk => 
-                    [new Metadata("International text", $"Compressed:{iTXtChunk.Compressed}\n{iTXtChunk.Keyword}: {iTXtChunk.Text}")],
+                [
+                    new Metadata("International text", $"Compressed:{iTXtChunk.Compressed}\n{iTXtChunk.Keyword}: {iTXtChunk.Text}"),
+                    new Metadata("Formated additional data", $"Formated data:{iTXtChunk.AdditionalData}")
+                ],
+                
                 oFFsChunk oFFsChunk => [new Metadata("Offset", $"({oFFsChunk.OffsetX}, {oFFsChunk.OffsetY}) {oFFsChunk.Unit}")],
                 pHYsChunk pHYsChunk => [new Metadata("Physical dimensions", $"({pHYsChunk.PixelsPerUnitX}, {pHYsChunk.PixelsPerUnitY}) pixels per {pHYsChunk.UnitSpecifier}")],
                 sPLTChunk sPltChunk => [new Metadata("Suggested palette", sPltChunk.PaletteName)],

@@ -12,6 +12,8 @@ public class iTXtChunk : PngChunk
     public string TranslatedKeyword { get; }
     public string Text { get; }
 
+    public string AdditionalData { get; }
+
     private static readonly char[] separator = new[] { '\n' };
 
     public iTXtChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
@@ -38,14 +40,16 @@ public class iTXtChunk : PngChunk
         var textLength = data.Length - (thirdNullIndex + 1);
         Text = Encoding.UTF8.GetString(data, thirdNullIndex + 1, textLength).Replace("\n","");
 
+        AdditionalData = Text;
+
         var pattern = @"(<\/?(exif:|tiff:)|<[^>]+>)";
-        var cleanXmlString = Regex.Replace(Text, pattern, match =>
+        var cleanXmlString = Regex.Replace(AdditionalData, pattern, match =>
         {
             if (!match.Groups[1].Success) return match.Value;
             return match.Groups[2].Value is "exif:" or "tiff:" ? match.Value : "";
         });
 
-        Text = Regex.Replace(cleanXmlString, @"\s+", " ")
+        AdditionalData = Regex.Replace(cleanXmlString, @"\s+", " ")
             .Replace("> <", "\n")
             [2..]
             [..^1]
@@ -55,8 +59,8 @@ public class iTXtChunk : PngChunk
             .Replace("tiff:", "")
             .Replace("exif:", "");
         
-        Text = "\n\n" + RemoveAfterLastSpace(Text);
-        // Console.WriteLine(Text);
+        AdditionalData = "\n" + RemoveAfterLastSpace(AdditionalData);
+        // Console.WriteLine(additionalData);
     }
 
     static string RemoveAfterLastSpace(string input)
@@ -72,7 +76,6 @@ public class iTXtChunk : PngChunk
                 lines[i] = lines[i][..lastSpaceIndex];
             }
         }
-        
         return string.Join("\n", lines);
     }
     
