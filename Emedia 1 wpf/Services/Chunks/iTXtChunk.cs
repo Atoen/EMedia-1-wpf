@@ -1,8 +1,10 @@
 ﻿using System.Text;
+using System.Text.RegularExpressions;
+using Emedia_1_wpf.Models;
 
 namespace Emedia_1_wpf.Services.Chunks;
 
-public class iTXtChunk : PngChunk
+public partial class iTXtChunk : PngChunk
 {
     public string Keyword { get; }
     public bool Compressed { get; }
@@ -10,6 +12,12 @@ public class iTXtChunk : PngChunk
     public string LanguageTag { get; }
     public string TranslatedKeyword { get; }
     public string Text { get; }
+    public string AdditionalData { get; }
+    
+    public List<Metadata> TagMetadata { get; } = [];
+
+    
+    private static readonly char[] separator = new[] { '\n' };
 
     public iTXtChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)
@@ -33,9 +41,58 @@ public class iTXtChunk : PngChunk
         TranslatedKeyword = Encoding.UTF8.GetString(data, secondNullIndex, translatedKeywordLength);
 
         var textLength = data.Length - (thirdNullIndex + 1);
-        Text = Encoding.UTF8.GetString(data, thirdNullIndex + 1, textLength);
+        Text = Encoding.UTF8.GetString(data, thirdNullIndex + 1, textLength).Replace("\n","");
+
+        AdditionalData = Text;
+
+        var pattern = @"(<\/?(exif:|tiff:)|<[^>]+>)";
+        var cleanXmlString = Regex.Replace(AdditionalData, pattern, match =>
+        {
+            if (!match.Groups[1].Success) return match.Value;
+            return match.Groups[2].Value is "exif:" or "tiff:" ? match.Value : "";
+        });
+
+        AdditionalData = MyRegex().Replace(cleanXmlString, " ")
+            .Replace("> <", "\n")
+            [2..^1]
+            .Replace(" ", "")
+            .Replace("</", " ")
+            .Replace(">", " ")
+            .Replace("tiff:", "")
+            .Replace("exif:", "");
+        
+        AdditionalData = RemoveAfterLastSpace(AdditionalData);
+
+        var lines = AdditionalData.Split('\n');
+
+        foreach (var line in lines)
+        {
+            var lineParts = line.Trim().Split(' ');
+
+            if (lineParts.Length >= 2)
+            {
+                TagMetadata.Add(new Metadata(lineParts[0], lineParts[1]));
+            }
+        }
+        // Console.WriteLine(AdditionalData);
     }
 
+    private static string RemoveAfterLastSpace(string input)
+    {
+        var lines = input.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+        for (var i = 0; i < lines.Length; i++)
+        {
+            lines[i] = lines[i].Trim();
+            var lastSpaceIndex = lines[i].LastIndexOf(' ');
+            
+            if (lastSpaceIndex != -1)
+            {
+                lines[i] = lines[i][..lastSpaceIndex];
+            }
+        }
+        return string.Join("\n", lines);
+    }
+    
     public override string FormatData()
     {
         var builder = new StringBuilder();
@@ -61,9 +118,12 @@ public class iTXtChunk : PngChunk
             builder.Append($" Translated keyword: {TranslatedKeyword}");
         }
 
-        builder.Append(' ');
+        builder.Append("Remaining metadata:");
         builder.Append(Text.Length < 100 ? Text : $"{Text[..100]}...");
 
         return builder.ToString();
     }
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex MyRegex();
 }

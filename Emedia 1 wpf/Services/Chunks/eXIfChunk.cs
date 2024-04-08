@@ -10,7 +10,7 @@ public class eXIfChunk : PngChunk
     public eXIfChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)
     {
-        MetaData = Encoding.UTF8.GetString(data);
+        MetaData = Encoding.ASCII.GetString(data);
     }
 
     public override string FormatData() => $"Type: {Type}, eXIf data: {MetaData}";

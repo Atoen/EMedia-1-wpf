@@ -212,21 +212,23 @@ public partial class MainViewModel : ObservableObject
                     new Metadata("Blue Point", $"({cHrmChunk.BlueX}, {cHrmChunk.BlueY})")
                 ],
                 gAMAChunk gAmaChunk => [new Metadata("Gamma", gAmaChunk.Gamma)],
-                iTXtChunk iTXtChunk =>
-                    [new Metadata("International text", $"Compressed:{iTXtChunk.Compressed}\n{iTXtChunk.Keyword}: {iTXtChunk
-                        .Text}")],
+                iTXtChunk iTXtChunk => [new Metadata("International text", $"Compressed:{iTXtChunk.Compressed}\n{iTXtChunk.Keyword}: {iTXtChunk.Text}")],
                 oFFsChunk oFFsChunk => [new Metadata("Offset", $"({oFFsChunk.OffsetX}, {oFFsChunk.OffsetY}) {oFFsChunk.Unit}")],
-                pHYsChunk pHYsChunk =>
-                    [new Metadata("Physical dimensions", $"({pHYsChunk.PixelsPerUnitX}, {pHYsChunk.PixelsPerUnitY}) pixels per {pHYsChunk.UnitSpecifier}")],
+                pHYsChunk pHYsChunk => [new Metadata("Physical dimensions", $"({pHYsChunk.PixelsPerUnitX}, {pHYsChunk.PixelsPerUnitY}) pixels per {pHYsChunk.UnitSpecifier}")],
                 sPLTChunk sPltChunk => [new Metadata("Suggested palette", sPltChunk.PaletteName)],
                 sRGBChunk sRgbChunk => [new Metadata("Rendering intent", sRgbChunk.RenderingIntent)],
                 sTERChunk sTerChunk => [new Metadata("Stereo indicator", sTerChunk.Indicator)],
                 tEXtChunk tEXtChunk => [new Metadata("Text", $"{tEXtChunk.Keyword}: {tEXtChunk.Text}")],
                 tIMEChunk tImeChunk => [new Metadata("Date of modification", tImeChunk.LastModificationTime)],
                 zTXtChunk zTXtChunk => [new Metadata("Compressed text", $"Compression method: {zTXtChunk.CompressionMethod}\n{zTXtChunk.Keyword}: {zTXtChunk.Text}")],
-                eXIfChunk eXIfChunk => [new Metadata("eXIf data length", $"{eXIfChunk.MetaData.Length}")],
+                eXIfChunk eXIfChunk => [new Metadata("eXIf data length", eXIfChunk.MetaData.Length)],
                 _ => Array.Empty<Metadata>()
             };
+
+            if (chunk is iTXtChunk iTXt)
+            {
+                allMetadata.AddRange(iTXt.TagMetadata);
+            }
             
             allMetadata.AddRange(metadata);
         }
