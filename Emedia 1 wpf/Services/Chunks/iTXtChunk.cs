@@ -12,12 +12,9 @@ public partial class iTXtChunk : PngChunk
     public string LanguageTag { get; }
     public string TranslatedKeyword { get; }
     public string Text { get; }
-    public string AdditionalData { get; }
-    
-    public List<Metadata> TagMetadata { get; } = [];
+    // public string AdditionalData { get; set; }
 
-    
-    private static readonly char[] separator = new[] { '\n' };
+    public List<Metadata> TagMetadata { get; } = [];
 
     public iTXtChunk(uint length, byte[] data, string type, uint crc, bool crcValid) :
         base(length, data, type, crc, crcValid)
@@ -41,18 +38,22 @@ public partial class iTXtChunk : PngChunk
         TranslatedKeyword = Encoding.UTF8.GetString(data, secondNullIndex, translatedKeywordLength);
 
         var textLength = data.Length - (thirdNullIndex + 1);
-        Text = Encoding.UTF8.GetString(data, thirdNullIndex + 1, textLength).Replace("\n","");
+        Text = Compressed
+            ? DecompressString(data[(thirdNullIndex + 1)..], Encoding.UTF8)
+            : Encoding.UTF8.GetString(data, thirdNullIndex + 1, textLength).Replace("\n","");
+        
+        ExtractExif(Text);
+    }
 
-        AdditionalData = Text;
-
-        var pattern = @"(<\/?(exif:|tiff:)|<[^>]+>)";
-        var cleanXmlString = Regex.Replace(AdditionalData, pattern, match =>
+    private void ExtractExif(string text)
+    {
+        var cleanXmlString = ExifRegex().Replace(text, match =>
         {
             if (!match.Groups[1].Success) return match.Value;
             return match.Groups[2].Value is "exif:" or "tiff:" ? match.Value : "";
         });
 
-        AdditionalData = MyRegex().Replace(cleanXmlString, " ")
+        text = WhiteSpaceRegex().Replace(cleanXmlString, " ")
             .Replace("> <", "\n")
             [2..^1]
             .Replace(" ", "")
@@ -60,10 +61,8 @@ public partial class iTXtChunk : PngChunk
             .Replace(">", " ")
             .Replace("tiff:", "")
             .Replace("exif:", "");
-        
-        AdditionalData = RemoveAfterLastSpace(AdditionalData);
 
-        var lines = AdditionalData.Split('\n');
+        var lines = RemoveAfterLastSpace(text).Split('\n');
 
         foreach (var line in lines)
         {
@@ -74,11 +73,11 @@ public partial class iTXtChunk : PngChunk
                 TagMetadata.Add(new Metadata(lineParts[0], lineParts[1]));
             }
         }
-        // Console.WriteLine(AdditionalData);
     }
 
     private static string RemoveAfterLastSpace(string input)
     {
+        const char separator = '\n';
         var lines = input.Split(separator, StringSplitOptions.RemoveEmptyEntries);
         for (var i = 0; i < lines.Length; i++)
         {
@@ -125,5 +124,8 @@ public partial class iTXtChunk : PngChunk
     }
 
     [GeneratedRegex(@"\s+")]
-    private static partial Regex MyRegex();
+    private static partial Regex WhiteSpaceRegex();
+    
+    [GeneratedRegex(@"(<\/?(exif:|tiff:)|<[^>]+>)")]
+    private static partial Regex ExifRegex();
 }
