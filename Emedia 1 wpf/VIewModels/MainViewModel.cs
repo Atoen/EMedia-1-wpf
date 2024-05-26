@@ -23,8 +23,13 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private double _progress;
     
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ShowImageCommand), nameof(AnonymizeImageCommand), nameof(EncryptImageCommand),
-        nameof(DecryptImageCommand), nameof(DisplayDFTCommand))]
+    [NotifyCanExecuteChangedFor(
+        nameof(ShowImageCommand),
+        nameof(AnonymizeImageCommand),
+        nameof(EncryptImageCommand),
+        nameof(DecryptImageCommand),
+        nameof(DisplayDFTCommand))]
+    
     private bool _fileIsValid;
     
     [ObservableProperty] private ObservableCollection<Log> _logs = [];
@@ -38,7 +43,11 @@ public partial class MainViewModel : ObservableObject
 
     public MainViewModel()
     {
-        _progressReporter = new Progress<double>(value => Progress = value);
+        _progressReporter = new Progress<double>(value =>
+        {
+            Console.WriteLine(value);
+            Progress = value;
+        });
     }
 
     private void ClearData()

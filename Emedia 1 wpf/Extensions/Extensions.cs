@@ -36,7 +36,7 @@ public static class Extensions
         return buffer;
     }
     
-    public static async Task<byte[]> ReadBytesAsync(this Stream stream, uint length)
+    public static async ValueTask<byte[]> ReadBytesAsync(this Stream stream, uint length)
     {
         var buffer = new byte[length];
         var bytesRead = await stream.ReadAsync(buffer);

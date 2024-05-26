@@ -55,8 +55,11 @@
         
         <Grid>
             <Rectangle x:Name="ProgressBar" Width="150" Fill="LimeGreen" HorizontalAlignment="Left" />
-            
-            <TextBlock Text="EMedia" VerticalAlignment="Center" Margin="10 0" HorizontalAlignment="Left"
+
+            <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=local:TitleBar}, Path=Title}" 
+            VerticalAlignment="Center" 
+            Margin="10 0" 
+            HorizontalAlignment="Left"
                        FontSize="16" FontWeight="Bold" Foreground="Black" />
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="🗕" FontSize="14"

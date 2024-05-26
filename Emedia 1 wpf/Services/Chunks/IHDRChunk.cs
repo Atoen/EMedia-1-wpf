@@ -4,8 +4,8 @@ namespace Emedia_1_wpf.Services.Chunks;
 
 public class IHDRChunk : PngChunk
 {
-    public uint Width { get; }
-    public uint Height { get; }
+    public int Width { get; }
+    public int Height { get; }
     public BitDepth BitDepth { get; }
     public ColorType ColorType { get; }
     public CompressionMethod CompressionMethod { get; }
@@ -19,8 +19,8 @@ public class IHDRChunk : PngChunk
     {
         var span = data.AsSpan();
 
-        Width = span[..4].GetUint();
-        Height = span[4..8].GetUint();
+        Width = (int) span[..4].GetUint();
+        Height = (int) span[4..8].GetUint();
         
         BitDepth = (BitDepth) span[8];
         ColorType = (ColorType) span[9];

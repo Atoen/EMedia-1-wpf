@@ -10,17 +10,17 @@ public partial class TitleBar
         InitializeComponent();
     }
 
-    public static readonly DependencyProperty ProgressValueProperty = DependencyProperty.Register(
-        nameof(ProgressValue), typeof(double), typeof(TitleBar), new PropertyMetadata(20.0, PropertyChangedCallback));
+    public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
+        nameof(Title), typeof(string), typeof(TitleBar), new PropertyMetadata(default(string)));
 
-    private static void PropertyChangedCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    public string Title
     {
-        var titleBar = (TitleBar) d;
-        var value = (double) e.NewValue;
-
-        var width = titleBar.DockPanel.ActualWidth * value;
-        titleBar.ProgressBar.Width = width;
+        get => (string) GetValue(TitleProperty);
+        set => SetValue(TitleProperty, value);
     }
+
+    public static readonly DependencyProperty ProgressValueProperty = DependencyProperty.Register(
+        nameof(ProgressValue), typeof(double), typeof(TitleBar), new PropertyMetadata(default(double), OperationProgressChangedCallback));
 
     public double ProgressValue
     {
@@ -28,10 +28,18 @@ public partial class TitleBar
         set => SetValue(ProgressValueProperty, value);
     }
     
+    private static void OperationProgressChangedCallback(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var titleBar = (TitleBar) d;
+        var value = (double) e.NewValue;
+
+        var width = titleBar.DockPanel.ActualWidth * value;
+        titleBar.ProgressBar.Width = width;
+    }
     
     private void TitleBar_OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
-        var width = DockPanel.ActualWidth * ProgressValue / 100;
+        var width = DockPanel.ActualWidth * ProgressValue;
         ProgressBar.Width = width;
     }
 

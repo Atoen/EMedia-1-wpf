@@ -47,7 +47,6 @@ public class PngChunk
         {
             Console.WriteLine($"Crc value is invalid. Expected: {expectedCrc}, actual: {crc}");
         }
-
         
         return type switch
         {
@@ -106,11 +105,41 @@ public class PngChunk
     public static async Task<byte[]> CompressAsync(byte[] data)
     {
         using var compressedStream = new MemoryStream();
-        using var sourceStream = new MemoryStream(data);
+        
+        compressedStream.WriteByte(0x78);
+        compressedStream.WriteByte(0xDA);
+
         await using var deflateStream = new DeflateStream(compressedStream, CompressionMode.Compress, leaveOpen: true);
+        using var sourceStream = new MemoryStream(data);
 
         await sourceStream.CopyToAsync(deflateStream);
+        await deflateStream.FlushAsync();
+        
+        var adler32 = CalculateAdler32(data);
+        
+        var adler32Bytes = BitConverter.GetBytes(adler32);
+        if (BitConverter.IsLittleEndian)
+        {
+            Array.Reverse(adler32Bytes);
+        }
+        
+        await compressedStream.WriteAsync(adler32Bytes);
+
         return compressedStream.ToArray();
+    }
+
+    private static uint CalculateAdler32(byte[] data)
+    {
+        const uint modAdler = 65521;
+        uint a = 1, b = 0;
+
+        foreach (var d in data)
+        {
+            a = (a + d) % modAdler;
+            b = (b + a) % modAdler;
+        }
+
+        return (b << 16) | a;
     }
 
     public static string DecompressString(byte[] data, Encoding encoding)

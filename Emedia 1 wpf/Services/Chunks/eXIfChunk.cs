@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace Emedia_1_wpf.Services.Chunks;
+﻿namespace Emedia_1_wpf.Services.Chunks;
 
 public class eXIfChunk : PngChunk
 {
