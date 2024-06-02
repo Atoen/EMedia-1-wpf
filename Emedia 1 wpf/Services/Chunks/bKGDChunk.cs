@@ -37,12 +37,4 @@ public class bKGDChunk : PngChunk
         
         return $"Type: {Type}, Background Color: {backgroundColor}";
     }
-    
-    protected override void EnsureValid()
-    {
-        if (Data.Length != 2)
-        {
-            throw new ChunkException(PngChunkType.bKGD,"bKGD chunk data must be exactly 2 bytes long.");
-        }
-    }
 }

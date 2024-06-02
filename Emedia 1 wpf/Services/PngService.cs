@@ -1,8 +1,6 @@
 ﻿using System.IO;
-using System.Numerics;
 using Emedia_1_wpf.Models;
 using Emedia_1_wpf.Services.Chunks;
-using Emedia_1_wpf.Services.RSA;
 
 namespace Emedia_1_wpf.Services;
 
@@ -13,40 +11,36 @@ public class PngService
     
     private readonly CryptoService _cryptoService = new();
     
-    public async Task DecryptAsync(List<PngChunk> chunks, string filePath, bool useLibrary, IProgress<double>? 
-            progress = null)
-    {
-        await using var stream = File.Create(filePath);
-        var data = chunks.Where(x => x is IDATChunk)
-            .SelectMany(x => x.Data)
-            .Skip(0)
-            .ToArray();
-        
-        var decompressed = await PngChunk.DecompressAsync(data);
-        var decrypted = await _cryptoService.DecryptAsync(decompressed, CryptographyMode.Library, progress);
-        var compressed = await PngChunk.CompressAsync(decrypted);
-        
-        var otherChunks = chunks.Where(x => x is not IDATChunk)
-            .ToList();
-        
-        otherChunks.Add(IDATChunk.FromBytes(compressed));
-        (otherChunks[^1], otherChunks[^2]) = (otherChunks[^2], otherChunks[^1]);
-
-        await stream.WriteAsync(PngSignature);
-        foreach (var chunk in otherChunks)
-        {
-            await chunk.AppendToStreamAsync(stream);
-        }
-    }
-
     public async Task EncryptAsync(
         List<PngChunk> chunks,
         string filePath,
-        bool useLibrary,
+        CryptographyMode cryptographyMode,
         IProgress<double>? progress = null)
     {
         await using var stream = File.Create(filePath);
+        
+        var decoded = await GetDecodedDataAsync(chunks);
+        var encrypted = await _cryptoService.EncryptAsync(decoded, cryptographyMode, progress);
 
+        await SavePngImageAsync(stream, chunks, encrypted);
+    }
+    
+    public async Task DecryptAsync(
+        List<PngChunk> chunks,
+        string filePath,
+        CryptographyMode cryptographyMode,
+        IProgress<double>? progress = null)
+    {
+        await using var stream = File.Create(filePath);
+        
+        var decoded = await GetDecodedDataAsync(chunks);
+        var decrypted = await _cryptoService.DecryptAsync(decoded, cryptographyMode, progress);
+
+        await SavePngImageAsync(stream, chunks, decrypted);
+    }
+
+    private async Task<byte[]> GetDecodedDataAsync(List<PngChunk> chunks)
+    {
         var header = (IHDRChunk) chunks[0];
         var filter = new PngFilter(header.Width, header.ColorType, header.BitDepth);
         
@@ -60,22 +54,19 @@ public class PngService
             .SelectMany(x => filter.Decode(x))
             .ToArray();
 
-        // var encrypted = await _cryptoService.EncryptAsync(decoded, CryptographyMode.Library, progress);
+        return decoded;
+    }
 
-        var step = CustomRSA.KeySize / 8 - 1;
-        var max = decoded.Chunk(step)
-            .Select(x => new BigInteger(x))
-            .Max();
-        
-        var rsa = new CustomRSA(max);
-        var encrypted = await Task.Run(() => rsa.EncryptECB(decoded, progress));
-        var rsaChunks = encrypted.Chunk(header.Width * filter.PixelWidth)
+    private async Task SavePngImageAsync(Stream stream, List<PngChunk> chunks, IEnumerable<byte> pixelData)
+    {
+        var header = (IHDRChunk) chunks[0];
+        var filter = new PngFilter(header.Width, header.ColorType, header.BitDepth);
+
+        var encoded = pixelData.Chunk(header.Width * filter.PixelWidth)
             .SelectMany(x => filter.EncodeNone(x))
             .ToArray();
-        
-        var compressed = await PngChunk.CompressAsync(rsaChunks);
-        
-        // var compressed = await PngChunk.CompressAsync(encrypted.ToArray());
+
+        var compressed = await PngChunk.CompressAsync(encoded);
         var encryptedChunk = IDATChunk.FromBytes(compressed);
         
         var indexOfData = chunks.FindIndex(x => x is IDATChunk);

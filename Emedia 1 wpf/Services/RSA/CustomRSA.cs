@@ -1,124 +1,124 @@
-﻿using System.IO;
-using System.Numerics;
-using System.Security.Cryptography;
+﻿using System.Numerics;
+using Emedia_1_wpf.Extensions;
 
 namespace Emedia_1_wpf.Services.RSA;
 
 public class CustomRSA
 {
-    private readonly BigInteger[] _publicKey = new BigInteger[2];
-    private BigInteger _privateKey;
+    private readonly BigInteger _modulus;
+    private readonly BigInteger _exponent;
+    private readonly BigInteger _privateKey;
+
+    private BigInteger _cbcVector;
 
     public const int KeySize = 2048;
-    private const double UpdateThreshold = 0.005;
 
     public CustomRSA(BigInteger m)
     {
-        // GenerateKeys(m);
-        
-        var privateKey64 = File.ReadAllText("private.pem");
-        
-        var rsa = new RSACryptoServiceProvider(KeySize);
-        rsa.ImportFromPem(privateKey64);
+        var keys = MathUtils.GenerateKeys(m, KeySize);
 
-        var parameters = rsa.ExportParameters(true);
-        _publicKey[0] = new BigInteger(parameters.Modulus!);
-        _publicKey[1] = new BigInteger(parameters.Exponent!);
-        _privateKey = new BigInteger(parameters.D!);
-    }
-
-    private void GenerateKeys(BigInteger m)
-    {
-        var n = BigInteger.Zero;
-        var p = BigInteger.Zero;
-        var q = BigInteger.Zero;
-
-        while (m > n)
-        {
-            (p, q) = MathUtils.GeneratePQ(KeySize);
-            n = p * q;
-        }
-
-        _publicKey[0] = n;
-        var phi = (p - 1) * (q - 1);
-
-        BigInteger e;
-        for (e = 2; e < phi; e++)
-        {
-            if (MathUtils.GreatestCommonDivisor(e, phi) == 1)
-            {
-                break;
-            }
-        }
-
-        _publicKey[1] = e;
-
-        var d = MathUtils.ModInverse(e, phi);
-        _privateKey = d;
-    }
-
-    public IEnumerable<byte> EncryptECB(IEnumerable<byte> data, IProgress<double>? progress = null)
-    {
-        var step = KeySize / 8 - 1;
-        var chunks = data.Chunk(step).ToArray();
-        var progressStep = 1.0 / chunks.Length;
-        var lastReportedProgress = 0.0;
-
-        return chunks.Select((x, i) =>
-            {
-                var bigInt = new BigInteger(x, isBigEndian: true);
-                if (bigInt >= _publicKey[0])
-                {
-                    throw new ArgumentException("M is bigger than n");
-                }
-
-                var encryptedBigInt = BigInteger.ModPow(bigInt, _publicKey[1], _publicKey[0]);
-                var encryptedBytes = encryptedBigInt.ToByteArray(isBigEndian: true);
-
-                if (encryptedBytes.Length < step)
-                {
-                    var paddedBytes = new byte[step];
-                    Array.Copy(encryptedBytes, 0, paddedBytes, step - encryptedBytes.Length, encryptedBytes.Length);
-                    encryptedBytes = paddedBytes;
-                }
-
-                var totalProgress = (i + 1) * progressStep;
-                if (totalProgress - lastReportedProgress >= UpdateThreshold)
-                {
-                    lastReportedProgress = totalProgress;
-                    progress?.Report(totalProgress);
-                }
-
-                return encryptedBytes.Take(step);
-            })
-            .SelectMany(x => x);
+        _modulus = keys.modulus;
+        _exponent = keys.exponent;
+        _privateKey = keys.privateKey;
     }
     
-    public IEnumerable<byte> EncryptCBC(IEnumerable<byte> data, IProgress<double>? progress = null)
+    public byte[] EncryptECB(IEnumerable<byte> data, IProgress<double>? progress = null)
     {
-        var step = KeySize / 8 - 1;
+        const int step = KeySize / 8 - 1;
         var chunks = data.Chunk(step).ToArray();
         var progressStep = 1.0 / chunks.Length;
-        var lastReportedProgress = 0.0;
         
-        var cbcVector = MathUtils.RandomIntegerBelow(_publicKey[0]);
-        var previousBlock = cbcVector;
-
-        return chunks.Select((x, i) =>
+        return chunks
+            .Select(progressStep, progress, x =>
             {
-                var bigInt = new BigInteger(x, isBigEndian: true);
-                if (bigInt >= _publicKey[0])
+                var bigInt = new BigInteger(x, isUnsigned: true, isBigEndian: true);
+                if (bigInt >= _modulus)
+                {
+                    throw new ArgumentException("M is bigger than n");
+                }
+                
+                var encryptedBigInt = BigInteger.ModPow(bigInt, _exponent, _modulus);
+                var encryptedBytes = encryptedBigInt.ToByteArray(isUnsigned: true, isBigEndian: true);
+                
+                if (encryptedBytes.Length < step)
+                {
+                    var paddedBytes = new byte[step];
+                    Array.Copy(x, 0, paddedBytes, 0, encryptedBytes.Length);
+                    encryptedBytes = paddedBytes;
+                }
+
+                return encryptedBytes.Take(step);
+            })
+            .SelectMany(x => x)
+            .ToArray();
+    }
+    
+    public byte[] DecryptECB(IEnumerable<byte> encryptedData, IProgress<double>? progress = null)
+    {
+        const int step = KeySize / 8 - 1;
+        var chunks = encryptedData.Chunk(step).ToArray();
+        var progressStep = 1.0 / chunks.Length;
+        var progressValue = 0.0;
+        var lastReportedValue = 0.0;
+        
+        return chunks
+            .AsParallel()
+            .AsOrdered()
+            .Select(x =>
+            {
+                var bigInt = new BigInteger(x, isUnsigned: true, isBigEndian: true);
+                var decryptedBigInt = BigInteger.ModPow(bigInt, _privateKey, _modulus);
+                var decryptedBytes = decryptedBigInt.ToByteArray(isUnsigned: true, isBigEndian: true);
+                
+                if (decryptedBytes.Length < step)
+                {
+                    var paddedBytes = new byte[step];
+                    Array.Copy(x, 0, paddedBytes, 0, decryptedBytes.Length);
+                    decryptedBytes = paddedBytes;
+                }
+                
+                if (progress is not null)
+                {
+                    lock (progress)
+                    {
+                        var currentProgress = progressValue += progressStep;
+                        if (currentProgress - lastReportedValue >= 0.005)
+                        {
+                            lastReportedValue = currentProgress;
+                            progress.Report(progressValue);
+                        }
+                    }
+                }
+                
+                return decryptedBytes.Take(step);
+            })
+            .SelectMany(x => x)
+            .ToArray();
+    }
+    
+    public byte[] EncryptCBC(IEnumerable<byte> data, IProgress<double>? progress = null)
+    {
+        var step = KeySize / 8 - 11;
+        var chunks = data.Chunk(step).ToArray();
+        var progressStep = 1.0 / chunks.Length;
+        
+        _cbcVector = MathUtils.RandomIntegerBelow(_modulus);
+        var previousBlock = _cbcVector;
+
+        return chunks.Select(progressStep, progress, x =>
+            {
+                var bigInt = new BigInteger(x, isUnsigned: true, isBigEndian: true);
+                if (bigInt >= _modulus)
                 {
                     throw new ArgumentException("M is bigger than n");
                 }
 
-                // XOR with the previous block
                 bigInt ^= previousBlock;
 
-                var encryptedBigInt = BigInteger.ModPow(bigInt, _publicKey[1], _publicKey[0]);
+                var encryptedBigInt = BigInteger.ModPow(bigInt, _exponent, _modulus);
                 previousBlock = encryptedBigInt;
 
-                var encryptedBytes = encryptedBigInt.ToByteArray(isBigEndian: true);
+                var encryptedBytes = encryptedBigInt.ToByteArray(isUnsigned: true, isBigEndian: true);
 
                 if (encryptedBytes.Length < step)
                 {
@@ -127,15 +127,40 @@ public class CustomRSA
                     encryptedBytes = paddedBytes;
                 }
 
-                var totalProgress = (i + 1) * progressStep;
-                if (totalProgress - lastReportedProgress >= UpdateThreshold)
-                {
-                    lastReportedProgress = totalProgress;
-                    progress?.Report(totalProgress);
-                }
-
                 return encryptedBytes.Take(step);
             })
-            .SelectMany(x => x);
+            .SelectMany(x => x)
+            .ToArray();
+    }
+    
+    public byte[] DecryptCBC(IEnumerable<byte> encryptedData, IProgress<double>? progress = null)
+    {
+        var step = KeySize / 8 - 0;
+        var chunks = encryptedData.Chunk(step).ToArray();
+        var progressStep = 1.0 / chunks.Length;
+
+        var previousBlock = _cbcVector;
+
+        return chunks.Select(progressStep, progress, x =>
+            {
+                var bigInt = new BigInteger(x, isUnsigned: true, isBigEndian: true);
+                var decryptedBigInt = BigInteger.ModPow(bigInt, _privateKey, _modulus);
+
+                decryptedBigInt ^= previousBlock;
+                previousBlock = bigInt;
+
+                var decryptedBytes = decryptedBigInt.ToByteArray(isUnsigned: true, isBigEndian: true);
+
+                if (decryptedBytes.Length < step)
+                {
+                    var paddedBytes = new byte[step];
+                    Array.Copy(decryptedBytes, 0, paddedBytes, step - decryptedBytes.Length, decryptedBytes.Length);
+                    decryptedBytes = paddedBytes;
+                }
+
+                return decryptedBytes.Take(step);
+            })
+            .SelectMany(x => x)
+            .ToArray();
     }
 }

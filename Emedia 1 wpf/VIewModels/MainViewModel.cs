@@ -21,6 +21,7 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _useLibrary;
     [ObservableProperty] private string _windowTitle = DefaultWindowTitle;
     [ObservableProperty] private double _progress;
+    [ObservableProperty] private CryptographyMode _cryptographyMode = CryptographyMode.ECB;
     
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(
@@ -91,7 +92,7 @@ public partial class MainViewModel : ObservableObject
             Mouse.OverrideCursor = Cursors.Wait;
             WindowTitle = $"Decrypting {Filename}";
             
-            await _pngService.DecryptAsync(_chunks, path, UseLibrary, _progressReporter);
+            await _pngService.DecryptAsync(_chunks, path, CryptographyMode, _progressReporter);
             CryptoOperationEnded();
             MessageBox.Show("Successfully decrypted file", "Emedia");
         }
@@ -112,7 +113,7 @@ public partial class MainViewModel : ObservableObject
             Mouse.OverrideCursor = Cursors.Wait;
             WindowTitle = $"Encrypting {Filename}";
             
-            await _pngService.EncryptAsync(_chunks, path, UseLibrary, _progressReporter);
+            await _pngService.EncryptAsync(_chunks, path, CryptographyMode, _progressReporter);
             CryptoOperationEnded();
             MessageBox.Show("Successfully encrypted file", "Emedia");
         }

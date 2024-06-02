@@ -115,15 +115,15 @@ public class PngChunk
         await sourceStream.CopyToAsync(deflateStream);
         await deflateStream.FlushAsync();
         
-        var adler32 = CalculateAdler32(data);
-        
-        var adler32Bytes = BitConverter.GetBytes(adler32);
-        if (BitConverter.IsLittleEndian)
-        {
-            Array.Reverse(adler32Bytes);
-        }
-        
-        await compressedStream.WriteAsync(adler32Bytes);
+        // var adler32 = CalculateAdler32(data);
+        //
+        // var adler32Bytes = BitConverter.GetBytes(adler32);
+        // if (BitConverter.IsLittleEndian)
+        // {
+        //     Array.Reverse(adler32Bytes);
+        // }
+        //
+        // await compressedStream.WriteAsync(adler32Bytes);
 
         return compressedStream.ToArray();
     }

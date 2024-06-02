@@ -7,6 +7,8 @@
         xmlns:models="clr-namespace:Emedia_1_wpf.Models"
         xmlns:viewModels="clr-namespace:Emedia_1_wpf.VIewModels"
         xmlns:userControls="clr-namespace:Emedia_1_wpf.Views.User_Controls"
+        xmlns:converters="clr-namespace:Emedia_1_wpf.Converters"
+        xmlns:services="clr-namespace:Emedia_1_wpf.Services"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}" Height="450" Width="800" MinHeight="300" MinWidth="500">
 
@@ -17,6 +19,10 @@
     <Window.DataContext>
         <viewModels:MainViewModel />
     </Window.DataContext>
+
+    <Window.Resources>
+        <converters:ComparisonConverter x:Key="ComparisonConverter" />
+    </Window.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -62,8 +68,24 @@
                         Decrypt
                     </Button>
                     <StackPanel>
-                        <TextBlock HorizontalAlignment="Center">Library</TextBlock>
-                        <CheckBox IsChecked="{Binding UseLibrary}" HorizontalAlignment="Center" />
+                        <RadioButton GroupName="encryption"
+                                     IsChecked="{Binding CryptographyMode, 
+                                     Converter={StaticResource ComparisonConverter},
+                                     ConverterParameter={x:Static services:CryptographyMode.ECB}}">
+                            ECB
+                        </RadioButton>
+                        <RadioButton GroupName="encryption"
+                                     IsChecked="{Binding CryptographyMode, 
+                                     Converter={StaticResource ComparisonConverter},
+                                     ConverterParameter={x:Static services:CryptographyMode.CBC}}">
+                            CBC
+                        </RadioButton>
+                        <RadioButton GroupName="encryption"
+                                     IsChecked="{Binding CryptographyMode, 
+                                     Converter={StaticResource ComparisonConverter},
+                                     ConverterParameter={x:Static services:CryptographyMode.Library}}">
+                            Library
+                        </RadioButton>
                     </StackPanel>
                 </StackPanel>
             </DockPanel>
